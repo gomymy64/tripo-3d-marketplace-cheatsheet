@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Материалы к Уроку 3D-маркетплейс на Tripo и Sonnet 5.5 | Мастодонт</title>
+<meta name="description" content="Шпаргалка к уроку: 3D-модели в Tripo, лендинг и маркетплейс на Sonnet 5.5 в Claude Code, база Supabase и оплата Stripe. Семь шагов и все промпты.">
+<style>
+@font-face{font-family:"Benzin";src:url("fonts/Benzin-Semibold.ttf") format("truetype");font-weight:600;font-display:swap}
+@font-face{font-family:"Benzin";src:url("fonts/Benzin-Bold.ttf") format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"Onest";src:url("fonts/Onest-Regular.ttf") format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:"Onest";src:url("fonts/Onest-Medium.ttf") format("truetype");font-weight:500;font-display:swap}
+@font-face{font-family:"Onest";src:url("fonts/Onest-SemiBold.ttf") format("truetype");font-weight:600;font-display:swap}
+@font-face{font-family:"Onest";src:url("fonts/Onest-Bold.ttf") format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"Blender";src:url("fonts/BlenderPro-Medium.ttf") format("truetype");font-weight:500;font-display:swap}
+@font-face{font-family:"Blender";src:url("fonts/BlenderPro-Bold.ttf") format("truetype");font-weight:700;font-display:swap}
+
+:root{--bg:#08080A;--bg2:#0E0E11;--bg3:#131317;--ink:#EFEAE2;--dim:#8F897D;
+--line:rgba(239,234,226,.09);--line2:rgba(239,234,226,.20);--a1:#FF7A2B;--a2:#C9A227;
+--pad:clamp(16px,4vw,64px);--mono:ui-monospace,"Cascadia Mono",Consolas,Menlo,monospace}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:var(--a1) var(--bg2)}
+html::-webkit-scrollbar{width:12px}
+html::-webkit-scrollbar-track{background:var(--bg2)}
+html::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--a1),var(--a2));border-radius:8px;border:3px solid var(--bg2)}
+html::-webkit-scrollbar-thumb:hover{background:var(--a1)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Onest",system-ui,sans-serif;
+font-size:clamp(16px,1.1vw,18px);line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+background:radial-gradient(900px 600px at 88% 8%,rgba(255,122,43,.07),transparent 70%),
+radial-gradient(800px 700px at 6% 62%,rgba(201,162,39,.05),transparent 70%)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.025;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+.wrap{width:min(1080px,100%);margin:0 auto;padding:0 var(--pad);position:relative;z-index:2}
+a{color:var(--a1)}
+.ic{width:24px;height:24px;flex:none;fill:none;stroke:url(#g);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ic.dk{stroke:currentColor}
+
+/* свет за курсором */
+.aura{position:fixed;width:620px;height:620px;left:-999px;top:-999px;pointer-events:none;z-index:1;
+transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,122,43,.10),transparent 62%)}
+@media(hover:none){.aura{display:none}}
+
+/* полоса прогресса */
+.bar{position:fixed;left:0;top:0;height:3px;width:0;z-index:200;
+background:linear-gradient(90deg,var(--a1),var(--a2));box-shadow:0 0 18px rgba(255,122,43,.6)}
+
+/* навигация */
+.nav{position:sticky;top:0;z-index:90;background:rgba(8,8,10,.82);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3)}
+.nav::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+background:linear-gradient(90deg,transparent,var(--a1),var(--a2),transparent)}
+.nav-in{display:flex;align-items:center;gap:16px;height:64px}
+.brand{font-family:"Benzin";font-weight:700;font-size:clamp(13px,1.4vw,18px);text-transform:uppercase;letter-spacing:.02em;
+color:var(--ink);text-decoration:none;white-space:nowrap}
+.nav-links{display:flex;gap:4px;margin-left:auto}
+.nav-links a{font-family:"Blender";font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+color:var(--dim);text-decoration:none;padding:9px 13px;border-radius:3px;transition:.25s;white-space:nowrap}
+.nav-links a:hover{color:var(--ink);background:rgba(239,234,226,.06)}
+@media(max-width:560px){.nav-in{gap:10px;height:56px}.nav-links{gap:0}
+.nav-links a{font-size:10.5px;letter-spacing:.08em;padding:8px 7px}}
+
+/* шапка: кадр по родной пропорции, без обрезки */
+.hero{position:relative;overflow:hidden;background:#08080A;padding-bottom:clamp(44px,6vw,96px);
+border-bottom:1px solid rgba(239,234,226,.14)}
+.hero-frame{position:relative;width:min(100%,calc(82vh * 2048 / 1152));aspect-ratio:2048/1152;margin:0 auto;will-change:transform}
+.hero-img{display:block;width:100%;height:100%}
+.hero-frame::after{content:"";position:absolute;inset:0;pointer-events:none;
+background:linear-gradient(180deg,rgba(8,8,10,.42) 0%,rgba(8,8,10,0) 16%,rgba(8,8,10,0) 58%,rgba(8,8,10,.7) 80%,#08080A 99%)}
+@media(min-aspect-ratio:1458/1000){.hero-frame::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+background:linear-gradient(90deg,#08080A 0,rgba(8,8,10,0) 8%,rgba(8,8,10,0) 92%,#08080A 100%)}}
+.hero-in{position:relative;z-index:3;margin-top:calc(min(100%,calc(82vh * 2048 / 1152)) * -0.124)}
+.badge{display:inline-block;font-family:"Blender";font-weight:700;font-size:12px;letter-spacing:.26em;
+text-transform:uppercase;color:var(--a1);border:1px solid var(--a1);padding:8px 15px;border-radius:2px;
+background:rgba(8,8,10,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+h1{font-family:"Benzin";font-weight:700;text-transform:uppercase;margin:22px 0 0;
+font-size:clamp(20px,3.7vw,60px);line-height:1.06;letter-spacing:-.01em;text-shadow:0 6px 44px rgba(0,0,0,.85)}
+h1 em{font-style:normal;color:#FFC061;
+text-shadow:0 0 34px rgba(255,170,70,.85),0 0 70px rgba(255,140,50,.5),0 4px 22px rgba(0,0,0,.95)}
+.rule{display:block;width:clamp(80px,9vw,140px);height:3px;margin:26px 0 0;border-radius:2px;
+background:linear-gradient(90deg,var(--a1),var(--a2));box-shadow:0 0 18px rgba(255,122,43,.5)}
+.sub{margin:20px 0 0;color:#B5AEA2;max-width:60ch}
+.watch{display:inline-flex;align-items:center;gap:11px;margin-top:30px;
+background:linear-gradient(100deg,var(--a1),var(--a2));color:#08080A;
+font-family:"Blender";font-weight:700;font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+padding:15px 28px;border-radius:3px;text-decoration:none;
+box-shadow:0 12px 34px rgba(255,122,43,.28);transition:transform .22s,box-shadow .22s}
+.watch:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 18px 46px rgba(255,122,43,.42)}
+.watch .ic{width:20px;height:20px;stroke-width:2}
+
+section{padding:clamp(48px,6.5vw,104px) 0;position:relative;z-index:2;scroll-margin-top:60px}
+h2{font-family:"Benzin";font-weight:700;text-transform:uppercase;margin:0 0 12px;
+font-size:clamp(21px,3.2vw,44px);line-height:1.06;letter-spacing:-.01em}
+.h2-note{color:var(--dim);margin:0 0 38px;max-width:58ch}
+h3{font-family:"Benzin";font-weight:700;text-transform:uppercase;margin:0 0 14px;
+font-size:clamp(17px,1.9vw,26px);line-height:1.15}
+
+/* что научишься: карточки с наклоном */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;perspective:1100px}
+.card{background:linear-gradient(160deg,var(--bg3),var(--bg2));border:1px solid var(--line);
+border-radius:6px;padding:28px 26px;position:relative;overflow:hidden;transform-style:preserve-3d;
+transition:opacity .75s cubic-bezier(.2,.7,.2,1),transform .35s cubic-bezier(.2,.7,.2,1),border-color .3s,box-shadow .3s}
+.card::before{content:"";position:absolute;inset:0 0 auto;height:3px;
+background:linear-gradient(90deg,var(--a1),var(--a2))}
+.card:hover{border-color:var(--line2);box-shadow:0 22px 50px rgba(0,0,0,.55)}
+.card .ic{width:34px;height:34px;stroke-width:1.5;margin-bottom:16px}
+.card p{margin:0;color:#B5AEA2;font-size:.96em}
+
+/* инструменты и ссылки */
+.tools{display:grid;gap:11px}
+.tool{display:flex;align-items:center;gap:16px;background:var(--bg2);border:1px solid var(--line);
+border-radius:5px;padding:18px 22px;text-decoration:none;color:inherit;
+position:relative;overflow:hidden;transition:transform .25s,border-color .25s,background .25s}
+.tool::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+background:linear-gradient(180deg,var(--a1),var(--a2));transform:scaleY(0);transition:transform .3s}
+.tool:hover{border-color:var(--line2);transform:translateX(6px);background:var(--bg3)}
+.tool:hover::before{transform:scaleY(1)}
+.t-txt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.tool .nm{font-family:"Blender";font-weight:700;font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.tool .ds{color:var(--dim);font-size:.9em}
+.pill{font-family:"Blender";font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+padding:6px 12px;border-radius:2px;border:1px solid var(--line2);color:var(--dim);white-space:nowrap}
+.pill.hot{color:var(--a1);border-color:rgba(255,122,43,.45)}
+.pill.free{color:var(--a2);border-color:rgba(201,162,39,.45)}
+@media(max-width:600px){.tool{flex-wrap:wrap;padding:16px 16px}.pill{margin-left:40px}}
+
+/* шаги */
+.step{display:grid;grid-template-columns:minmax(96px,150px) 1fr;gap:clamp(18px,3.4vw,64px);
+background:linear-gradient(155deg,var(--bg3),var(--bg2) 60%);border:1px solid var(--line);
+border-radius:8px;padding:clamp(24px,3.2vw,44px);margin-bottom:16px;position:relative;overflow:hidden;overflow:clip;
+box-shadow:0 18px 44px rgba(0,0,0,.35)}
+.step::before{content:"";position:absolute;inset:0 0 auto;height:3px;
+background:linear-gradient(90deg,var(--a1),var(--a2),transparent)}
+.step::after{content:"";position:absolute;right:-120px;top:-120px;width:300px;height:300px;
+pointer-events:none;background:radial-gradient(circle,rgba(255,122,43,.09),transparent 68%)}
+.num{font-family:"Benzin";font-weight:700;font-size:clamp(44px,5vw,92px);line-height:.9;color:transparent;
+-webkit-text-stroke:1.5px rgba(255,122,43,.6);white-space:nowrap;letter-spacing:-.03em;max-width:100%;
+width:max-content;justify-self:start;position:sticky;top:96px;align-self:start}
+.step-body{min-width:0;position:relative;z-index:1}
+@media(max-width:760px){.step{grid-template-columns:1fr;gap:14px}.num{position:static;font-size:44px}}
+.lead{color:#B5AEA2;margin:0 0 20px;max-width:64ch}
+.p{color:#B5AEA2;margin:0 0 16px;max-width:64ch}
+.acts{list-style:none;padding:0;margin:0 0 20px}
+.acts li{position:relative;padding-left:26px;margin-bottom:11px}
+.acts li::before{content:"";position:absolute;left:0;top:.78em;width:13px;height:2px;border-radius:2px;
+background:linear-gradient(90deg,var(--a1),var(--a2))}
+.sub-h{display:flex;align-items:baseline;gap:12px;font-family:"Benzin";font-weight:600;text-transform:uppercase;
+font-size:clamp(13px,1.15vw,16px);letter-spacing:.02em;margin:34px 0 14px;padding-top:24px;border-top:1px solid var(--line)}
+.sub-h span{font-family:"Blender";font-weight:700;color:var(--a1);font-size:13px;letter-spacing:.16em}
+code{font-family:var(--mono);background:rgba(255,122,43,.12);padding:2px 7px;border-radius:3px;font-size:.86em;color:var(--a1)}
+
+/* промпт */
+.pr{margin:22px 0;background:#09090B;border:1px solid var(--line);border-left:3px solid transparent;
+border-image:linear-gradient(180deg,var(--a1),var(--a2)) 1;
+box-shadow:0 14px 40px rgba(0,0,0,.55),0 0 34px rgba(255,122,43,.06),inset 0 1px 0 rgba(255,255,255,.04)}
+.pr-top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.pr-lab{display:flex;align-items:center;gap:10px;font-family:"Blender";font-weight:700;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--a1)}
+.pr-lab .ic{width:18px;height:18px}
+.copy{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--line2);color:var(--dim);
+font-family:"Blender";font-weight:700;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+padding:8px 14px;border-radius:2px;cursor:pointer;transition:.2s}
+.copy .ic{width:15px;height:15px;stroke:currentColor}
+.copy:hover{border-color:var(--a1);color:var(--a1);box-shadow:0 0 20px rgba(255,122,43,.25)}
+.copy.done{border-color:var(--a2);color:var(--a2)}
+.pr-body{margin:0;padding:20px 18px;white-space:pre-wrap;word-break:break-word;color:#E6E0D6;
+font-family:var(--mono);font-size:.84em;line-height:1.65;max-height:340px;overflow:auto;
+scrollbar-width:thin;scrollbar-color:var(--a1) rgba(239,234,226,.04)}
+.pr-body::-webkit-scrollbar{width:9px}
+.pr-body::-webkit-scrollbar-track{background:rgba(239,234,226,.04)}
+.pr-body::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--a1),var(--a2));border-radius:5px}
+
+/* подсказки, настройки, промокод */
+.tip,.set{display:flex;gap:13px;align-items:flex-start;border-radius:5px;padding:15px 18px;margin:16px 0 0;font-size:.94em}
+.tip .ic,.set .ic{width:21px;height:21px;margin-top:2px}
+.tip{background:rgba(201,162,39,.05);border:1px solid rgba(201,162,39,.24);color:#CFC8BC}
+.set{background:rgba(255,122,43,.05);border:1px solid rgba(255,122,43,.26);color:#CFC8BC}
+.set b{color:var(--ink)}
+.promo{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:6px 0 8px;padding:18px 20px;border-radius:6px;
+background:linear-gradient(120deg,rgba(255,122,43,.10),rgba(201,162,39,.06));border:1px solid rgba(255,122,43,.35)}
+.promo .ic{width:30px;height:30px}
+.promo p{margin:0;flex:1;min-width:220px;font-size:.95em;color:#D6CFC3}
+.promo b{color:var(--ink)}
+.promo .code{font-family:var(--mono);font-weight:700;color:var(--a1);letter-spacing:.06em}
+.promo .copy{margin-left:0}
+.promo-go{font-family:"Blender";font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+color:#08080A;background:linear-gradient(100deg,var(--a1),var(--a2));padding:10px 16px;border-radius:2px;text-decoration:none;white-space:nowrap}
+
+/* кадры во всю ширину, по родной пропорции */
+.shot{position:relative;border-radius:10px;overflow:hidden;background:var(--bg2);
+box-shadow:0 40px 90px rgba(0,0,0,.65);will-change:transform;
+--gut:clamp(16px,3.2vw,64px);width:calc(100vw - var(--gut)*2);margin-left:calc(50% - 50vw + var(--gut));
+margin-top:clamp(52px,7vw,110px);margin-bottom:clamp(52px,7vw,110px)}
+.shot img{display:block;width:100%;height:auto;aspect-ratio:2048/1152}
+.shot::after{content:"";position:absolute;inset:0;pointer-events:none;
+background:linear-gradient(180deg,rgba(8,8,10,0) 50%,rgba(8,8,10,.86) 100%)}
+.shot.tr::after{background:linear-gradient(0deg,rgba(8,8,10,0) 52%,rgba(8,8,10,.8) 100%)}
+.shot figcaption{position:absolute;z-index:2;left:0;bottom:0;padding:clamp(24px,4vw,64px);max-width:62%;
+font-family:"Benzin";font-weight:700;text-transform:uppercase;font-size:clamp(18px,2.6vw,46px);line-height:1.08;
+text-shadow:0 4px 30px rgba(0,0,0,.8)}
+.shot.r figcaption{left:auto;right:0;text-align:right}
+.shot.tr figcaption{left:auto;right:0;bottom:auto;top:0;text-align:right;max-width:44%}
+.shot .k{display:block;font-family:"Blender";font-weight:700;font-size:12px;letter-spacing:.24em;
+color:var(--a1);margin-bottom:12px;text-shadow:none}
+@media(max-width:760px){.shot::after{display:none}
+.shot figcaption,.shot.r figcaption,.shot.tr figcaption{position:static;max-width:none;text-align:left;padding:18px 18px 22px;font-size:19px}}
+
+/* появление */
+.js [data-rv]{opacity:0;transform:translateY(34px) scale(.985)}
+[data-rv]{transition:opacity .75s cubic-bezier(.2,.7,.2,1),transform .75s cubic-bezier(.2,.7,.2,1)}
+.card[data-rv]{transition:opacity .75s cubic-bezier(.2,.7,.2,1),transform .75s cubic-bezier(.2,.7,.2,1),border-color .3s,box-shadow .3s}
+.js [data-rv].in{opacity:1;transform:none}
+.js [data-rv].now{transition:none!important}
+.card.tilt{transition:transform .35s cubic-bezier(.2,.7,.2,1),border-color .3s,box-shadow .3s!important}
+@media(prefers-reduced-motion:reduce){.js [data-rv]{opacity:1;transform:none;transition:none}
+.hero-frame,.shot{transform:none!important}}
+
+/* интенсив */
+.cta-sec{padding-top:0}
+.cta{background:linear-gradient(155deg,var(--bg3),var(--bg2));border:1px solid var(--line2);border-radius:8px;
+padding:clamp(26px,4vw,58px);position:relative;overflow:hidden;cursor:pointer;
+transition:border-color .3s,transform .3s;animation:glow 3s ease-in-out infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 44px rgba(255,122,43,.10)}50%{box-shadow:0 0 84px rgba(255,122,43,.26)}}
+.cta:hover{border-color:var(--a1)}
+.cta-hit{position:absolute;inset:0;z-index:5;display:block}
+.cta::before{content:"";position:absolute;right:-110px;top:-110px;width:340px;height:340px;pointer-events:none;
+background:radial-gradient(circle,rgba(255,122,43,.16),transparent 68%)}
+.cta::after{content:"";position:absolute;left:-90px;bottom:-90px;width:300px;height:300px;pointer-events:none;
+background:radial-gradient(circle,rgba(201,162,39,.14),transparent 68%)}
+.cta h2{margin:0;max-width:22ch}
+.cta h2 span{background:linear-gradient(100deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.cta-cols{display:grid;grid-template-columns:1fr 1fr;gap:clamp(22px,3vw,50px);margin-top:30px}
+@media(max-width:760px){.cta-cols{grid-template-columns:1fr}}
+.cta-lab{font-family:"Blender";font-weight:700;font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--a1);margin:0 0 15px}
+.cta-cols ul{list-style:none;padding:0;margin:0}
+.cta-cols li{display:flex;gap:12px;align-items:flex-start;margin-bottom:13px;color:#C9C2B6;font-size:.96em}
+.cta-cols li .ic{width:20px;height:20px;margin-top:3px}
+.cta-bottom{display:flex;align-items:center;gap:20px;margin-top:34px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:28px}
+.cta-bottom .free{font-family:"Blender";font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:15px;color:var(--dim)}
+.cta-bottom .free b{color:var(--a2)}
+.cta-btn{margin-left:auto;background:linear-gradient(100deg,var(--a1),var(--a2));color:#08080A;
+font-family:"Blender";font-weight:700;font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+padding:16px 32px;border-radius:3px;transition:transform .22s;display:inline-block}
+.cta:hover .cta-btn{transform:translateY(-2px) scale(1.03)}
+@media(max-width:560px){.cta-btn{margin-left:0;width:100%;text-align:center}}
+
+footer{border-top:1px solid var(--line);padding:44px 0 66px;position:relative;z-index:2}
+.f-in{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.f-in .tag{color:var(--dim);font-size:.92em}
+.f-in a.yt{margin-left:auto;display:inline-flex;align-items:center;gap:9px;color:var(--a1);text-decoration:none;font-family:"Blender";font-weight:700;
+font-size:13px;letter-spacing:.14em;text-transform:uppercase}
+.f-in a.yt .ic{width:20px;height:20px}
+::selection{background:var(--a1);color:#08080A}
+</style>
+<script>document.documentElement.className+=" js"</script>
+</head><body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#FF7A2B"/><stop offset="1" stop-color="#C9A227"/></linearGradient></defs>
+<symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2.8l8 4.6v9.2l-8 4.6-8-4.6V7.4z"/><path d="M4 7.4l8 4.6 8-4.6M12 12v9.2"/></symbol>
+<symbol id="i-walk" viewBox="0 0 24 24"><circle cx="13.5" cy="4.2" r="1.9"/><path d="M12.6 8.2l-1.4 5.6 3 2.6.6 5M11.2 13.8l-2.4 3-3 .8M12.6 8.2l3.2 2.4 2.6.4M12.6 8.2l-3.4 1.4-1.4 3"/></symbol>
+<symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M6 6.5h.01M8.5 6.5h.01"/><rect x="6" y="12" width="5.5" height="5" rx="1"/><path d="M14.5 13h4M14.5 16h3"/></symbol>
+<symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.8"/><path d="M5 5.5v13c0 1.55 3.13 2.8 7 2.8s7-1.25 7-2.8v-13"/><path d="M5 12c0 1.55 3.13 2.8 7 2.8s7-1.25 7-2.8"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6 15h4"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.4"/><path d="M10.8 18.4h2.4"/></symbol>
+<symbol id="i-term" viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="16" rx="2.2"/><path d="M7 9.5l3 2.5-3 2.5M12.5 15H17"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="3.2"/><path d="M10 9.2v5.6l4.8-2.8z"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5V5.5a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l4.5 4.5 10.5-10.5"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H9.5L4 20z"/><path d="M8 8.8h8M8 12h5"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9.2 18h5.6M10.2 21h3.6"/><path d="M12 3a6 6 0 0 0-3.7 10.7c.7.6 1 1.3 1 2.1V16h5.4v-.2c0-.8.3-1.5 1-2.1A6 6 0 0 0 12 3z"/></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+<symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><path d="M14.7 9.4c-.5-.9-1.5-1.5-2.7-1.5-1.5 0-2.6.8-2.6 2s1.1 1.7 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2c-1.2 0-2.2-.6-2.7-1.5M12 6.3v1.6M12 16.1v1.6"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M7.8 8.6l1.5 1.5 2.6-2.6M14 9.2h3M7.8 14.6l1.5 1.5 2.6-2.6M14 15.2h3"/></symbol>
+<symbol id="i-gift" viewBox="0 0 24 24"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8.5h14V12M12 8v12.5"/><path d="M12 8C10.6 5 7 4.6 7 6.8 7 8 9.4 8 12 8zm0 0c1.4-3 5-3.4 5-1.2C17 8 14.6 8 12 8z"/></symbol>
+<symbol id="i-yt" viewBox="0 0 24 24"><path d="M21 8.2a3 3 0 0 0-2.1-2.1C17.2 5.6 12 5.6 12 5.6s-5.2 0-6.9.5A3 3 0 0 0 3 8.2 31 31 0 0 0 2.6 12a31 31 0 0 0 .4 3.8 3 3 0 0 0 2.1 2.1c1.7.5 6.9.5 6.9.5s5.2 0 6.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .4-3.8 31 31 0 0 0-.4-3.8z"/><path d="M10.2 9.4v5.2l4.4-2.6z"/></symbol>
+</svg>
+
+<div class="bar" id="bar"></div>
+<div class="aura" id="aura"></div>
+
+<nav class="nav"><div class="wrap nav-in">
+<a class="brand" href="#top">Мастодонт</a>
+<div class="nav-links"><a href="#tools">Инструменты</a><a href="#steps">Шаги</a><a href="#links">Ссылки</a></div>
+</div></nav>
+
+<header class="hero" id="top">
+<div class="hero-frame" id="heroframe"><img class="hero-img" src="img/stupeni.jpg" width="2048" height="1152" alt="Семь ступеней к своему магазину 3D-моделей" fetchpriority="high"></div>
+<div class="wrap hero-in">
+<span class="badge" data-rv>Материалы к уроку</span>
+<h1 data-rv>3D-маркетплейс на<br><em>Tripo</em> и <em>Sonnet&nbsp;5.5</em></h1>
+<span class="rule" data-rv></span>
+<p class="sub" data-rv>Tripo делает товар - 3D-модели с текстурой 8K и анимацией. Sonnet 5.5 в Claude Code собирает лендинг и маркетплейс, Supabase хранит товары, Stripe принимает оплату. Семь шагов, все промпты копируются кнопкой.</p>
+<a class="watch" data-rv href="https://youtu.be/xFhZbHYeStU" target="_blank" rel="noopener"><svg class="ic dk"><use href="#i-play"/></svg>Смотреть видео</a>
+</div></header>
+
+<section id="learn"><div class="wrap">
+<h2 data-rv>Что научишься делать</h2>
+<p class="h2-note" data-rv>Один проект от пустой папки до магазина, который принимает деньги.</p>
+<div class="cards">
+<div class="card" data-rv><svg class="ic"><use href="#i-cube"/></svg><p>Делать 3D-модели в Tripo: из текста в картинку, из картинки в модель с текстурой 8K</p></div>
+<div class="card" data-rv><svg class="ic"><use href="#i-walk"/></svg><p>Вставлять в модель скелет и оживлять её движением из библиотеки на сотню анимаций</p></div>
+<div class="card" data-rv><svg class="ic"><use href="#i-layout"/></svg><p>Собирать лендинг и маркетплейс на Sonnet 5.5 обычными словами</p></div>
+<div class="card" data-rv><svg class="ic"><use href="#i-db"/></svg><p>Подключать базу Supabase, чтобы каталог читал товары из таблицы</p></div>
+<div class="card" data-rv><svg class="ic"><use href="#i-card"/></svg><p>Принимать оплату через Stripe и отдавать покупателю ссылку на файл модели</p></div>
+<div class="card" data-rv><svg class="ic"><use href="#i-phone"/></svg><p>Проверять и чинить обе страницы под телефон одной фразой</p></div>
+</div></div></section>
+
+<section id="tools"><div class="wrap">
+<h2 data-rv>Что понадобится</h2>
+<p class="h2-note" data-rv>Четыре сервиса и один наш ролик про генерацию картинок прямо в Claude.</p>
+<div class="tools" data-rv>
+<a class="tool" href="https://tripo.pxf.io/Gb52n2" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cube"/></svg><span class="t-txt"><span class="nm">Tripo AI</span><span class="ds">Делает 3D-модели. По этой ссылке в течение 24 часов - 500 бесплатных кредитов, промокод TRIPOCREW - минус 60% на первый месяц</span></span><span class="pill hot">500 кредитов</span></a>
+<a class="tool" href="https://claude.ai/download" target="_blank" rel="noopener"><svg class="ic"><use href="#i-term"/></svg><span class="t-txt"><span class="nm">Claude</span><span class="ds">Claude Code в приложении Claude. Модель Sonnet 5.5 собирает лендинг и маркетплейс</span></span><span class="pill">по подписке</span></a>
+<a class="tool" href="https://supabase.link/71ABqPh" target="_blank" rel="noopener"><svg class="ic"><use href="#i-db"/></svg><span class="t-txt"><span class="nm">Supabase</span><span class="ds">База данных: таблица товаров, из которой читает каталог</span></span><span class="pill free">бесплатно</span></a>
+<a class="tool" href="https://dashboard.stripe.com" target="_blank" rel="noopener"><svg class="ic"><use href="#i-card"/></svg><span class="t-txt"><span class="nm">Stripe</span><span class="ds">Приём оплаты: Payment Links, работаем в тестовом режиме</span></span><span class="pill">тестовый режим</span></a>
+<a class="tool" href="https://youtu.be/A5qPuRah4lI" target="_blank" rel="noopener"><svg class="ic"><use href="#i-play"/></svg><span class="t-txt"><span class="nm">Скилл /generate</span><span class="ds">Как генерировать картинки и видео прямо в Claude - наш ролик. Нужен для промпта из шага 02</span></span><span class="pill">видео</span></a>
+</div></div></section>
+
+<section id="steps"><div class="wrap">
+<h2 data-rv>Шаги</h2>
+<p class="h2-note" data-rv>Семь шагов по порядку. Все промпты копируются кнопкой.</p>
+
+<article class="step" data-rv><div class="num">01</div><div class="step-body">
+<h3>Инструменты</h3>
+<p class="lead">Мозг проекта - Sonnet 5.5 в Claude Code: он пишет весь код и собирает страницы. Фабрика - Tripo: из текста или картинки выдаёт настоящую 3D-модель. Начинаем с пустой папки.</p>
+<ul class="acts">
+<li>Открой Claude Code в приложении Claude и начни новую сессию в пустой папке <code>marketplace</code></li>
+<li>Модель - <b>Sonnet 5.5</b></li>
+<li>Внутри проекта сделай папку <code>models</code> - сюда будут падать все модели из Tripo, отсюда Sonnet их и возьмёт</li>
+</ul>
+<div class="tip"><svg class="ic"><use href="#i-bulb"/></svg><div>У Tripo есть свой MCP (пока в бета-тесте) - грубо говоря, провод, по которому Claude сам ходит в сервис. Пишешь ему в чат «сделай модель» - он идёт в Tripo и генерит.</div></div>
+</div></article>
+
+<article class="step" data-rv><div class="num">02</div><div class="step-body">
+<h3>Бренд</h3>
+<p class="lead">Описываешь магазин обычными словами и сразу кидаешь три сайта с крутыми анимациями - пусть ориентируется на них. Промпт вставляешь в Claude Code целиком.</p>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 1 · в Claude Code · бренд и две страницы</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">собираем маркетплейс 3D-моделей. две страницы.
+
+первая - продающий лендинг: на первом экране крупная 3D-модель на весь экран, по скроллу появляются ещё несколько моделей из каталога, внизу кнопка «Войти в маркетплейс».
+
+вторая - сам маркетплейс: свой первый экран с моделью, под ним каталог карточек, по клику карточка открывается сбоку, модель в ней можно крутить мышкой и пальцем.
+
+модели будут лежать в папке models в формате GLB, я положу их туда сам. пока их нет - собери всё на заглушках.
+
+сразу делай адаптивно под телефон.
+
+магазин 3D-моделей в постапокалиптическом стиле: мехи, броня, оружие, техника. покупают инди-разработчики игр и 3D-художники, которым нужны готовые модели. настроение - тяжёлый ржавый металл, тёмный фон. акценты и название предложи сам, но в названии должно быть слово MASTODONT - это мой бренд.
+
+вот сайты с прикольными анимациями, ориентируйся на них: https://juncastudio.com/ https://www.wearetheromans.com/ https://johngearhart.me/
+
+нужно прям вау, аутентично. все картинки, которые нужны, генери моделью GPT Image 2 в 2K через скилл /generate.
+
+сначала задай мне вопросы, которые тебе реально нужны, и предложи направление.</pre></div>
+<ul class="acts">
+<li>Sonnet не бросается кодить, а сначала задаёт вопросы - отвечай коротко</li>
+<li>Предлагает направление - говоришь «давай», и он уходит собирать</li>
+<li>Пока он работает, идёшь делать модели в Tripo</li>
+</ul>
+<div class="tip"><svg class="ic"><use href="#i-bulb"/></svg><div>Ответы из видео: язык сайта - английский, на заглушках 12 карточек, над каталогом фильтры по четырём категориям, в боковой карточке - название, цена и кнопка Buy.</div></div>
+<div class="tip"><svg class="ic"><use href="#i-bulb"/></svg><div>Картинки для сайта промпт генерит через скилл <code>/generate</code>. Как настроить генерацию картинок и видео прямо в Claude - <a href="https://youtu.be/A5qPuRah4lI" target="_blank" rel="noopener">в нашем ролике</a>.</div></div>
+</div></article>
+
+<figure class="shot r" data-par><img src="img/fabrika.jpg" width="2048" height="1152" alt="Фабрика: товар для магазина делает Tripo" loading="lazy"><figcaption><span class="k">Шаг 03 · Товары</span>Sonnet - мозг.<br>Tripo - фабрика.</figcaption></figure>
+
+<article class="step" data-rv><div class="num">03</div><div class="step-body">
+<h3>Товары в Tripo</h3>
+<p class="lead">Tripo делает 3D-модели из текста или из картинки, им пользуются больше 6,5 миллиона человек. Главная модель сейчас H3.1. Фишка: сначала делается картинка, а уже из неё модель. Из нормальной картинки выходит нормальная модель, из кривой - кривая.</p>
+<div class="promo"><svg class="ic"><use href="#i-gift"/></svg><p><b>Tripo по нашей ссылке:</b> регистрируешься в течение 24 часов - получаешь 500 бесплатных кредитов. Промокод <span class="code">TRIPOCREW</span> - минус 60% на первый месяц.</p><button class="copy" type="button" data-copy="TRIPOCREW"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать код</span></button><a class="promo-go" href="https://tripo.pxf.io/Gb52n2" target="_blank" rel="noopener">Открыть Tripo</a></div>
+
+<div class="sub-h"><span>3.1</span>Картинка главного товара</div>
+<ul class="acts">
+<li>Открой Tripo Studio, раздел генерации картинок</li>
+<li>Вставь промпт - на выходе мех на чистом сером фоне, целиком, ничего лишнего вокруг. Вот такую картинку и надо давать на вход</li>
+</ul>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 2 · в Tripo · главный товар - мех</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">боевой постапокалиптический потёртый двуногий мех в полный рост, стоит строго в т-позе: прямые руки вытянуты в стороны горизонтально, ладони раскрыты, пять металлических пальцев на каждой кисти расставлены и разделены, ноги прямо и чуть шире плеч. угловатая броня из металлических пластин, на суставах видны гидравлические поршни и заклёпки. реалистичный износ металла: царапины, сколы краски, потёки ржавчины, сварные швы. матовый серый металл с оранжевыми элементами и ошмётками ткани. однотонный серый фон, объект целиком в кадре.</pre></div>
+<div class="tip"><svg class="ic"><use href="#i-bulb"/></svg><div>T-поза в промпте не для красоты. Если модель потом будешь анимировать, сразу пиши, что она стоит в T-позе, руки в стороны, пальцы раздвинуты - так скелет встанет ровнее.</div></div>
+
+<div class="sub-h"><span>3.2</span>Правка картинки словами</div>
+<p class="p">Что-то не нравится - не генеришь заново. Жмёшь карандаш под картинкой (Edit Image) и правишь словами. Старая версия никуда не девается, лежит в истории справа.</p>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 3 · в Tripo · правка картинки</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">сделай оранжевые элементы ярче и добавь больше потёртостей на броне.</pre></div>
+
+<div class="sub-h"><span>3.3</span>Из картинки - модель</div>
+<ul class="acts">
+<li>Жмёшь <b>Multi-View</b> - Tripo сам дорисовывает меха сбоку и сзади. Из одной картинки нейронке приходится угадывать, что там за спиной, а так модель выходит точнее</li>
+<li>Вкладка <b>H3.1 Model</b> - самый детальный режим, для главного товара</li>
+<li>Перед генерацией включаешь <b>Ultra</b> - максимальная детализация формы, <b>8K Texture</b> - максимальная чёткость текстуры, и <b>PBR</b></li>
+<li>Жмёшь <b>Generate</b> - модель выходит сразу в цвете, с текстурой</li>
+</ul>
+<div class="set"><svg class="ic"><use href="#i-sliders"/></svg><div><b>Настройки:</b> H3.1 Model · Ultra · 8K Texture · PBR</div></div>
+<div class="tip"><svg class="ic"><use href="#i-bulb"/></svg><div>PBR объясняет модели, где металл, где ржавчина, где рельеф. Крутишь модель - металл бликует, ржавчина матовая. На сайте, где модель крутится, это как раз и видно.</div></div>
+
+<div class="sub-h"><span>3.4</span>Smart Mesh 2.0 - лёгкая модель</div>
+<p class="p">Второй режим: быстрее, отдаёт белую модель без цвета - только чистая форма. Сетку настраиваешь сам: четырёхугольники лучше анимируются, треугольники больше под сохранение деталей.</p>
+<div class="set"><svg class="ic"><use href="#i-sliders"/></svg><div><b>Настройки:</b> Smart Mesh 2.0 · топология - четырёхугольники · от 500 до 25 000 полигонов</div></div>
+<div class="tip"><svg class="ic"><use href="#i-bulb"/></svg><div>У меха в H3.1 почти два миллиона граней, в Smart Mesh - около двадцати девяти тысяч. На витрине нужна полная детализация, поэтому на сайт идут цветные модели из H3.1.</div></div>
+
+<div class="sub-h"><span>3.5</span>Остальные товары</div>
+<p class="p">Шлем, мотоцикл и секиру делаешь так же, в H3.1 и в цвете: промпт, картинка, Multi-View, генерация. Перед каждой генерацией включаешь Ultra и 8K Texture.</p>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 4 · в Tripo · товар 2 - шлем</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">постапокалиптический потёртый боевой шлем. собран из металлических пластин на заклёпках, забрало с узкой прорезью, вмятины от ударов, ржавчина, обрывки ткани и кожаные ремни. матовый серый металл с оранжевыми элементами. однотонный серый фон, объект целиком в кадре.</pre></div>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 5 · в Tripo · товар 3 - мотоцикл</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">постапокалиптический боевой мотоцикл. помятая рама собрана из разных металлических деталей на сварке и заклёпках, массивные колёса с шипами, выхлопные трубы, ржавчина, облупленная краска, на руле обрывки ткани. матовый серый металл с оранжевыми элементами. однотонный серый фон, объект целиком в кадре.</pre></div>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 6 · в Tripo · товар 4 - секира</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">постапокалиптическая боевая секира. лезвие выпилено из старого металлического листа, зазубрины и ржавчина, рукоять из трубы обмотана изолентой и обрывками ткани. матовый серый металл с оранжевыми элементами. однотонный серый фон, объект целиком в кадре.</pre></div>
+<div class="tip"><svg class="ic"><use href="#i-bulb"/></svg><div>Ещё пять моделей для каталога - противогаз, щит, механический пёс, дрон и багги - делаются тем же способом. Всего в каталоге десять товаров.</div></div>
+
+<div class="sub-h"><span>3.6</span>Remesh, скелет и анимация</div>
+<ul class="acts">
+<li><b>Remesh</b> облегчает модель, скажем, под игру или под телефон, и сохраняет стиль. Для витрины не нужен - тут нужно полное качество</li>
+<li>Возвращаешься к меху, заходишь в <b>Rig</b>, тип <b>Humanoid</b>. Tripo сам вставляет в модель скелет - кости, за которые её можно двигать</li>
+<li><b>Animation</b> - выбираешь движение из библиотеки, их там больше сотни. Товар в магазине не стоит столбом, а двигается</li>
+</ul>
+
+<div class="sub-h"><span>3.7</span>Экспорт в папку models</div>
+<ul class="acts">
+<li><b>Export</b> у каждой модели в формате <b>GLB</b></li>
+<li>У меха выбираешь анимацию - можно до пяти сразу. Без выбранной анимации модель скачается статичной</li>
+<li>Всё кидаешь в папку <code>models</code>, которую сделали в шаге 01</li>
+</ul>
+</div></article>
+
+<article class="step" data-rv><div class="num">04</div><div class="step-body">
+<h3>Сборка</h3>
+<p class="lead">Пока ты был в Tripo, Sonnet собрал каркас: лендинг, маркетплейс, каталог - всё на месте, а вместо моделей заглушки, которые он сделал сам. Запомни, как это выглядит. Теперь говоришь ему, что модели на месте.</p>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 7 · в Claude Code · встроить модели</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">модели лежат в папке models, они тяжёлые - до шестидесяти мегабайт каждая. упрости их до ста пятидесяти тысяч полигонов и сожми, а в каталоге грузи модели по мере прокрутки, а не все сразу. встрой их: мех - главная модель на весь первый экран лендинга, с анимацией. остальные - в каталог маркетплейса, по одной на карточку. модель должна крутиться мышкой и пальцем.</pre></div>
+<ul class="acts">
+<li>Лендинг: мех на весь первый экран, и он двигается</li>
+<li>Жмёшь кнопку - ты в маркетплейсе. Открываешь карточку - она выезжает сбоку, модель крутится мышкой и пальцем</li>
+<li>Сравни с заглушками: там модели, которые нейронка сделала сама, здесь - модели из Tripo</li>
+</ul>
+<div class="tip"><svg class="ic"><use href="#i-bulb"/></svg><div>Цифры в промпте можно не подбирать. Достаточно сказать «сделай так, чтобы сайт не лагал» - он сам всё упростит и сожмёт. Полное качество модели видно внутри карточки товара.</div></div>
+</div></article>
+
+<article class="step" data-rv><div class="num">05</div><div class="step-body">
+<h3>База</h3>
+<p class="lead">Supabase - база данных, на старте бесплатная. Подключаешь её прямо к Sonnet через MCP - тот самый провод: нейронка сама ходит в базу и всё там делает.</p>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 8 · в Claude Code · подключить Supabase</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">подключи Supabase MCP к этому проекту.</pre></div>
+<ul class="acts">
+<li>Sonnet ставит подключение. Дальше один раз входишь в Supabase через браузер: <code>/mcp</code>, supabase, Authenticate. Никакие ключи копировать не надо</li>
+<li>Заходишь в <a href="https://supabase.link/71ABqPh" target="_blank" rel="noopener">Supabase</a> и создаёшь новый проект - пока пустой</li>
+</ul>
+<div class="tip"><svg class="ic"><use href="#i-bulb"/></svg><div>В приложении Claude то же подключение делается коннектором: Manage connectors, в поиске Supabase, жмёшь - открывается браузер, жмёшь соединить.</div></div>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 9 · в Claude Code · таблица товаров</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">через Supabase MCP создай в моём проекте таблицу products: название, описание, цена, путь к модели. заполни её товарами из каталога и переделай маркетплейс так, чтобы каталог читал товары из этой таблицы.</pre></div>
+<ul class="acts">
+<li>В Supabase, в Table Editor - таблица <code>products</code> с товарами. Sonnet сам её создал и сам заполнил</li>
+<li>Добавь строку прямо в таблице и обнови страницу сайта - новый товар уже в магазине. Без кода</li>
+</ul>
+</div></article>
+
+<article class="step" data-rv><div class="num">06</div><div class="step-body">
+<h3>Телефон</h3>
+<p class="lead">Страницы собирались сразу под мобилку, но проверить надо.</p>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 10 · в Claude Code · проверка на телефоне</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">проверь обе страницы в ширине телефона: модель крутится пальцем, кнопки не налезают друг на друга, текст читается. почини всё, что разъехалось.</pre></div>
+<ul class="acts">
+<li>Открой обе страницы в режиме телефона и пролистай - модель крутится пальцем, всё на месте</li>
+</ul>
+</div></article>
+
+<article class="step" data-rv><div class="num">07</div><div class="step-body">
+<h3>Оплата</h3>
+<p class="lead">База стоит - значит можно продавать.</p>
+<div class="pr"><div class="pr-top"><span class="pr-lab"><svg class="ic"><use href="#i-chat"/></svg>Промпт 11 · в Claude Code · Stripe</span><button class="copy" type="button"><svg class="ic"><use href="#i-copy"/></svg><span>Скопировать</span></button></div><pre class="pr-body">подключи Stripe к карточке товара: кнопка «Купить», оплата через Stripe Checkout в тестовом режиме, после оплаты покупатель получает ссылку на скачивание GLB-файла модели.</pre></div>
+<ul class="acts">
+<li>Регистрируешься в <a href="https://dashboard.stripe.com" target="_blank" rel="noopener">Stripe</a> и работаешь в тестовом режиме</li>
+<li>Жмёшь плюс и создаёшь платёжную ссылку (Payment Link) под товар: название и описание - их покупатель увидит на странице оплаты, картинка, цена</li>
+<li><b>Create link</b> - копируешь ссылку и отдаёшь нейронке, чтобы она вставила её во все кнопки «Купить»</li>
+<li>Жмёшь «Купить», оплачиваешь тестовой картой - приходит ссылка на скачивание модели</li>
+</ul>
+<div class="set"><svg class="ic"><use href="#i-card"/></svg><div><b>Тестовая карта Stripe:</b> 4242 4242 4242 4242 · любой срок в будущем · любой CVC</div></div>
+<div class="tip"><svg class="ic"><use href="#i-bulb"/></svg><div>Чтобы выйти из тестового режима и принимать настоящие деньги, в Stripe нужно активировать аккаунт. С этого момента это не демо, а магазин, который правда можно запустить.</div></div>
+</div></article>
+</div></section>
+
+<section id="links"><div class="wrap">
+<h2 data-rv>Все ссылки</h2>
+<div class="tools" data-rv>
+<a class="tool" href="https://youtu.be/xFhZbHYeStU" target="_blank" rel="noopener"><svg class="ic"><use href="#i-yt"/></svg><span class="t-txt"><span class="nm">Этот урок</span><span class="ds">Смотреть видео на YouTube</span></span><span class="pill">видео</span></a>
+<a class="tool" href="https://tripo.pxf.io/Gb52n2" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cube"/></svg><span class="t-txt"><span class="nm">Tripo AI</span><span class="ds">500 бесплатных кредитов при регистрации за 24 часа, промокод TRIPOCREW - минус 60% на первый месяц</span></span><span class="pill hot">бонус</span></a>
+<a class="tool" href="https://claude.ai/download" target="_blank" rel="noopener"><svg class="ic"><use href="#i-term"/></svg><span class="t-txt"><span class="nm">Claude</span><span class="ds">Приложение Claude, внутри Claude Code</span></span><span class="pill">сервис</span></a>
+<a class="tool" href="https://supabase.link/71ABqPh" target="_blank" rel="noopener"><svg class="ic"><use href="#i-db"/></svg><span class="t-txt"><span class="nm">Supabase</span><span class="ds">База данных, бесплатный тариф</span></span><span class="pill free">бесплатно</span></a>
+<a class="tool" href="https://dashboard.stripe.com" target="_blank" rel="noopener"><svg class="ic"><use href="#i-card"/></svg><span class="t-txt"><span class="nm">Stripe</span><span class="ds">Payment Links, тестовый режим</span></span><span class="pill">сервис</span></a>
+<a class="tool" href="https://youtu.be/A5qPuRah4lI" target="_blank" rel="noopener"><svg class="ic"><use href="#i-play"/></svg><span class="t-txt"><span class="nm">Картинки и видео в Claude</span><span class="ds">Наш ролик: как генерировать прямо в Claude через скилл /generate</span></span><span class="pill">видео</span></a>
+</div></div></section>
+
+<div class="wrap"><figure class="shot tr" data-par><img src="img/itog.jpg" width="2048" height="1152" alt="Магазин открыт" loading="lazy"><figcaption><span class="k">Финал</span>Всё собрано.<br>Магазин открыт.</figcaption></figure></div>
+
+<section class="cta-sec"><div class="wrap">
+<div class="cta" style="position:relative" data-rv>
+  <a class="cta-hit" href="https://t.me/mastodont_aibot?start=mini_kurs" target="_blank" rel="noopener" aria-label="Забрать интенсив"></a>
+  <h2>Первые <span>$2к</span> на ИИ - бесплатный интенсив</h2>
+  <div class="cta-cols">
+    <div><div class="cta-lab">Внутри</div><ul>
+      <li><svg class="ic"><use href="#i-check"/></svg><span>Реальное демо на Claude вживую</span></li>
+      <li><svg class="ic"><use href="#i-check"/></svg><span>Софт, который за 5 минут находит компании без сайтов с готовыми контактами</span></li>
+      <li><svg class="ic"><use href="#i-check"/></svg><span>Кейсы учеников: $1650 за 3 проекта без команды</span></li>
+    </ul></div>
+    <div><div class="cta-lab">Два бонуса в конце</div><ul>
+      <li><svg class="ic"><use href="#i-coin"/></svg><span>50 скучных и самых прибыльных ниш без конкуренции</span></li>
+      <li><svg class="ic"><use href="#i-list"/></svg><span>Чек-лист: первые $500 за 7 дней</span></li>
+    </ul></div>
+  </div>
+  <div class="cta-bottom">
+    <span class="free"><b>Бесплатно.</b> Навсегда.</span>
+    <span class="cta-btn">Забрать интенсив</span>
+  </div>
+</div>
+</div></section>
+
+<footer><div class="wrap f-in">
+<span class="brand">Мастодонт</span>
+<span class="tag">AI и нейросети - просто, по делу</span>
+<a class="yt" href="https://youtu.be/xFhZbHYeStU" target="_blank" rel="noopener"><svg class="ic"><use href="#i-yt"/></svg>Смотреть на YouTube</a>
+</div></footer>
+
+<script>
+(function(){
+  /* появление: всё, что видно при загрузке, показываем сразу и без анимации */
+  var els=[].slice.call(document.querySelectorAll("[data-rv]"));
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce||!("IntersectionObserver" in window)){els.forEach(function(e){e.classList.add("now","in")});}
+  else{
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(!e.isIntersecting)return;
+        var el=e.target;el.classList.add("in");io.unobserve(el);
+        setTimeout(function(){el.style.transitionDelay=""},1300);
+      });
+    },{threshold:0,rootMargin:"0px 0px -8% 0px"});
+    var groups=[];
+    els.forEach(function(el){
+      if(el.getBoundingClientRect().top<innerHeight*1.05){el.classList.add("now","in");return;}
+      var p=el.parentElement,k=groups.indexOf(p);
+      if(k<0){groups.push(p);p.__n=0}
+      el.style.transitionDelay=((p.__n++)%6*70)+"ms";
+      io.observe(el);
+    });
+  }
+
+  /* параллакс шапки и кадров, полоса прогресса */
+  var bar=document.getElementById("bar"),hero=document.getElementById("heroframe");
+  var shots=[].slice.call(document.querySelectorAll(".shot"));
+  var ticking=false;
+  function frame(){
+    ticking=false;
+    var y=window.scrollY||pageYOffset,h=document.documentElement.scrollHeight-innerHeight;
+    bar.style.width=(h>0?Math.min(100,y/h*100):0)+"%";
+    if(reduce)return;
+    if(hero&&y<innerHeight*1.6)hero.style.transform="translate3d(0,"+(y*.06).toFixed(1)+"px,0)";
+    shots.forEach(function(s){
+      var r=s.getBoundingClientRect();
+      if(r.bottom<-50||r.top>innerHeight+50)return;
+      var p=(r.top+r.height/2-innerHeight/2)/innerHeight;
+      s.style.transform="translate3d(0,"+(p*-22).toFixed(1)+"px,0)";
+    });
+  }
+  addEventListener("scroll",function(){if(!ticking){ticking=true;requestAnimationFrame(frame)}},{passive:true});
+  addEventListener("resize",frame);
+  frame();
+
+  /* свет за курсором */
+  var aura=document.getElementById("aura");
+  addEventListener("pointermove",function(e){
+    if(e.pointerType&&e.pointerType!=="mouse")return;
+    aura.style.left=e.clientX+"px";aura.style.top=e.clientY+"px";
+  },{passive:true});
+
+  /* наклон карточек */
+  document.querySelectorAll(".card").forEach(function(c){
+    c.addEventListener("pointermove",function(e){
+      if(e.pointerType&&e.pointerType!=="mouse")return;
+      var r=c.getBoundingClientRect();
+      var x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+      c.classList.add("tilt");
+      c.style.transform="rotateY("+(x*7).toFixed(2)+"deg) rotateX("+(-y*7).toFixed(2)+"deg) translateZ(14px)";
+    });
+    c.addEventListener("pointerleave",function(){c.style.transform=""});
+  });
+
+  /* копирование */
+  function copyText(t){
+    if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(t);
+    return new Promise(function(ok,no){
+      var a=document.createElement("textarea");a.value=t;a.setAttribute("readonly","");
+      a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();
+      try{document.execCommand("copy")?ok():no()}catch(err){no(err)}
+      document.body.removeChild(a);
+    });
+  }
+  document.querySelectorAll(".copy").forEach(function(b){
+    var lab=b.querySelector("span"),orig=lab.textContent;
+    b.addEventListener("click",function(){
+      var t=b.getAttribute("data-copy");
+      if(!t){t=b.closest(".pr").querySelector(".pr-body").textContent}
+      copyText(t).then(function(){
+        lab.textContent="Скопировано!";b.classList.add("done");
+        setTimeout(function(){lab.textContent=orig;b.classList.remove("done")},2000);
+      });
+    });
+  });
+})();
+</script>
+</body></html>
